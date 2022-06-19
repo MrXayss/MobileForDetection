@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 28
-    buildToolsVersion "28.0.3"
+    buildToolsVersion "28.0.0"
 
     defaultConfig {
         minSdkVersion 21
@@ -11,6 +11,7 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
     }
 
     buildTypes {
@@ -19,26 +20,28 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }
     aaptOptions {
         noCompress "tflite"
     }
 
     lintOptions {
         checkReleaseBuilds false
-        // Or, if you prefer, you can continue to check for errors in release
-        // builds, but continue the build even when errors are found.
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
         abortOnError false
-    }
-
-    compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
     }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(":models")
     implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'org.tensorflow:tensorflow-lite-task-vision:0.1.0'
- }
+
+    implementation 'org.tensorflow:tensorflow-lite-task-vision:0.3.0'
+    implementation 'org.tensorflow:tensorflow-lite-metadata:0.3.0'
+    implementation 'org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.3.0'
+}
