@@ -42,9 +42,7 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   private Integer sensorOrientation;
   private Classifier classifier;
   private BorderedText borderedText;
-  /** Input image size of the model along x axis. */
   private int imageSizeX;
-  /** Input image size of the model along y axis. */
   private int imageSizeY;
   MediaPlayer mSuccess,mRed;
 
@@ -136,8 +134,6 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
                   new Runnable() {
                     @Override
                     public void run() {
-//                      LOGGER.d("LAbel:"+recognition.getTitle().toString());
-//                      mRed.start();
                       showResultsInBottomSheet(results);
                       showFrameInfo(previewWidth + "x" + previewHeight);
                       showCropInfo(imageSizeX + "x" + imageSizeY);
@@ -155,7 +151,6 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   @Override
   protected void onInferenceConfigurationChanged() {
     if (rgbFrameBitmap == null) {
-      // Defer creation until we're getting camera frames.
       return;
     }
     final Device device = getDevice();
@@ -192,7 +187,6 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
       return;
     }
 
-    // Updates the input image size.
     imageSizeX = classifier.getImageSizeX();
     imageSizeY = classifier.getImageSizeY();
   }

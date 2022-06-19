@@ -58,7 +58,6 @@ public class Main extends Activity implements SensorEventListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //TextView в котором будет отображаться градус поворота:
         CompOrient = (TextView) findViewById(R.id.Header);
         xshow = (TextView) findViewById(R.id.textView);
         yshow = (TextView) findViewById(R.id.textView2);
@@ -68,11 +67,8 @@ public class Main extends Activity implements SensorEventListener {
         rasst = (TextView) findViewById(R.id.textView7);
         idtraffic = (TextView) findViewById(R.id.textView6);
         status = (TextView) findViewById(R.id.textView8);
-        accuracy = (TextView) findViewById(R.id.textView10);
-        //Инициализируем возможность работать с сенсором устройства:
+        accuracy = (TextView) findViewById(R.id.textView10);а:
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-//        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
-//                SensorManager.SENSOR_DELAY_GAME);
         tvLocationNet = findViewById(R.id.tvLocationNet);
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         mPlayer= MediaPlayer.create(this, R.raw.turnongeo);
@@ -269,7 +265,6 @@ public class Main extends Activity implements SensorEventListener {
 //        locationManager.requestLocationUpdates(
 //                LocationManager.NETWORK_PROVIDER, 0, 1,
 //                locationListener);
-        //Устанавливаем слушателя ориентации сенсора
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION ),
                 SensorManager.SENSOR_DELAY_GAME);
     }
@@ -343,7 +338,6 @@ public class Main extends Activity implements SensorEventListener {
     private String formatLocation(Location location)  {
         if (location == null)
             return "";
-//        "Местоположение: lat = %1$.4f, lon = %2$.4f",
         return String.format(
                 "Местоположение: lat = %1$f, lon = %2$f",
                 location.getLatitude(), location.getLongitude());
@@ -352,29 +346,21 @@ public class Main extends Activity implements SensorEventListener {
     @Override
     protected void onPause() {
         super.onPause();
-
-        //Останавливаем при надобности слушателя ориентации
-        //сенсора с целью сбережения заряда батареи:
         mSensorManager.unregisterListener(this);
     }
 
     @Override
     public void onSensorChanged(final SensorEvent event) {
 
-        //Получаем градус поворота от оси, которая направлена на север, север = 0 градусов:
         float degree = Math.round(event.values[0]);
         CompOrient.setText("Отклонение от севера: " + Float.toString(degree) + " градусов");
         if (mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION ) != null) {
-//            a = Math.round(event.values[1]);
-//            b = Math.round(event.values[0]);
-//            Log.i("123",String.valueOf(Math.round(event.values[1])));
             boolean enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
             if (enabled == true && light != 0 && trafficid !=0)
             {
                 rasst.setText("Необходимое отклонение: "+light);
                 idtraffic.setText("Айди светофора: "+trafficid);
                 checkkarman(Math.round(event.values[1]),Math.round(event.values[0]));
-//                checktraffic(Math.round(event.values[0]));
                 checkall();
             }
             else if(enabled == false)
@@ -384,11 +370,6 @@ public class Main extends Activity implements SensorEventListener {
             else{
                 status.setText("ПОИСК");
             }
-//            checkkarman(Math.round(event.values[1]));
-
-            //                checktraffic(new SendDeviceDetails().execute(String.valueOf(post_dict)).get());
-//            checktraffic(Math.round(event.values[0]));
-//            checkall();
             xshow.setText("x: "+Math.round(event.values[0]));
             yshow.setText("y: "+Math.round(event.values[1]));
             zshow.setText("z: "+Math.round(event.values[2]));

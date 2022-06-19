@@ -39,7 +39,6 @@ import org.tensorflow.lite.examples.classification.env.Logger;
 
 public class LegacyCameraConnectionFragment extends Fragment {
   private static final Logger LOGGER = new Logger();
-  /** Conversion from screen rotation to JPEG orientation. */
   private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
   static {
@@ -52,14 +51,8 @@ public class LegacyCameraConnectionFragment extends Fragment {
   private Camera camera;
   private Camera.PreviewCallback imageListener;
   private Size desiredSize;
-  /** The layout identifier to inflate for this Fragment. */
   private int layout;
-  /** An {@link AutoFitTextureView} for camera preview. */
   private AutoFitTextureView textureView;
-  /**
-   * {@link TextureView.SurfaceTextureListener} handles several lifecycle events on a {@link
-   * TextureView}.
-   */
   private final TextureView.SurfaceTextureListener surfaceTextureListener =
       new TextureView.SurfaceTextureListener() {
         @Override
@@ -114,7 +107,6 @@ public class LegacyCameraConnectionFragment extends Fragment {
         @Override
         public void onSurfaceTextureUpdated(final SurfaceTexture texture) {}
       };
-  /** An additional thread for running tasks that shouldn't block the UI. */
   private HandlerThread backgroundThread;
 
   @SuppressLint("ValidFragment")
@@ -145,10 +137,6 @@ public class LegacyCameraConnectionFragment extends Fragment {
   public void onResume() {
     super.onResume();
     startBackgroundThread();
-    // When the screen is turned off and turned back on, the SurfaceTexture is already
-    // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
-    // a camera and start preview from here (otherwise, we wait until the surface is ready in
-    // the SurfaceTextureListener).
 
     if (textureView.isAvailable()) {
       if (camera != null) {
@@ -166,13 +154,11 @@ public class LegacyCameraConnectionFragment extends Fragment {
     super.onPause();
   }
 
-  /** Starts a background thread and its {@link Handler}. */
   private void startBackgroundThread() {
     backgroundThread = new HandlerThread("CameraBackground");
     backgroundThread.start();
   }
 
-  /** Stops the background thread and its {@link Handler}. */
   private void stopBackgroundThread() {
     backgroundThread.quitSafely();
     try {

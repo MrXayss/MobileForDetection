@@ -50,7 +50,6 @@ public class SendLocation extends AsyncTask<String, Void, String> {
                 return null;
             }
             JsonResponse =buffer.toString().replaceAll("\\s+","");
-            Log.i("Respons", String.valueOf(JsonResponse));
             return JsonResponse;
 
 

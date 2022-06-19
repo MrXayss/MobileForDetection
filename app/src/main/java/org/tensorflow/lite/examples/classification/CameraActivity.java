@@ -103,10 +103,6 @@ public abstract class CameraActivity extends AppCompatActivity
       rotationTextView,
       inferenceTimeTextView;
   protected ImageView bottomSheetArrowImageView;
-  private ImageView plusImageView, minusImageView;
-  private Spinner modelSpinner;
-  private Spinner deviceSpinner;
-  private TextView threadsTextView;
 
   private Model model = Model.QUANTIZED_EFFICIENTNET;
   private Device device = Device.CPU;
@@ -213,7 +209,6 @@ public abstract class CameraActivity extends AppCompatActivity
     return yuvBytes[0];
   }
 
-  /** Callback for android.hardware.Camera API */
   @Override
   public void onPreviewFrame(final byte[] bytes, final Camera camera) {
     if (isProcessingFrame) {
@@ -222,7 +217,6 @@ public abstract class CameraActivity extends AppCompatActivity
     }
 
     try {
-      // Initialize the storage bitmaps once when the resolution is known.
       if (rgbBytes == null) {
         Camera.Size previewSize = camera.getParameters().getPreviewSize();
         previewHeight = previewSize.height;
@@ -258,7 +252,6 @@ public abstract class CameraActivity extends AppCompatActivity
     processImage();
   }
 
-  /** Callback for Camera2 API */
   @Override
   public void onImageAvailable(final ImageReader reader) {
     // We need wait until we have some size from onPreviewSizeChosen
@@ -415,14 +408,12 @@ public abstract class CameraActivity extends AppCompatActivity
     }
   }
 
-  // Returns true if the device supports the required hardware level, or better.
   private boolean isHardwareLevelSupported(
       CameraCharacteristics characteristics, int requiredLevel) {
     int deviceLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
     if (deviceLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
       return requiredLevel == deviceLevel;
     }
-    // deviceLevel is not LEGACY, can use numerical sort
     return requiredLevel <= deviceLevel;
   }
 
@@ -432,7 +423,6 @@ public abstract class CameraActivity extends AppCompatActivity
       for (final String cameraId : manager.getCameraIdList()) {
         final CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 
-        // We don't use a front facing camera in this sample.
         final Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
         if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
           continue;
@@ -445,9 +435,7 @@ public abstract class CameraActivity extends AppCompatActivity
           continue;
         }
 
-        // Fallback to camera1 API for internal cameras that don't have full support.
-        // This should help with legacy situations where using the camera2 API causes
-        // distorted or otherwise broken previews.
+
         useCamera2API =
             (facing == CameraCharacteristics.LENS_FACING_EXTERNAL)
                 || isHardwareLevelSupported(
@@ -492,8 +480,7 @@ public abstract class CameraActivity extends AppCompatActivity
   }
 
   protected void fillBytes(final Plane[] planes, final byte[][] yuvBytes) {
-    // Because of the variable row stride it's not possible to know in
-    // advance the actual necessary dimensions of the yuv planes.
+
     for (int i = 0; i < planes.length; ++i) {
       final ByteBuffer buffer = planes[i].getBuffer();
       if (yuvBytes[i] == null) {
@@ -558,7 +545,6 @@ public abstract class CameraActivity extends AppCompatActivity
     });
     if (results != null && results.size() >= 3) {
       Recognition recognition = results.get(0);
-      //TODO: показывает определенный предмет
       if (recognition != null) {
         if (recognition.getTitle() != null) recognitionTextView.setText(recognition.getTitle());
         if (recognition.getConfidence() != null) {
@@ -590,8 +576,6 @@ public abstract class CameraActivity extends AppCompatActivity
           recognition2ValueTextView.setText(
               String.format("%.2f", (100 * recognition2.getConfidence())) + "%");
       }
-      LOGGER.d("LAbel: " + recognition.getTitle()+"-"+recognition1.getTitle()+"-"+recognition2.getTitle());
-      LOGGER.d("LAbel: " + recognitionTextView.getText());
     }
 
   }
@@ -636,9 +620,6 @@ public abstract class CameraActivity extends AppCompatActivity
       LOGGER.d("Updating  device: " + device);
       this.device = device;
       final boolean threadsEnabled = device == Device.CPU;
-      plusImageView.setEnabled(threadsEnabled);
-      minusImageView.setEnabled(threadsEnabled);
-      threadsTextView.setText(threadsEnabled ? String.valueOf(numThreads) : "N/A");
       onInferenceConfigurationChanged();
     }
   }
@@ -665,24 +646,9 @@ public abstract class CameraActivity extends AppCompatActivity
 
   protected abstract void onInferenceConfigurationChanged();
 
-  @Override
-  public void onClick(View v) {
-
-      setNumThreads(--numThreads);
-      threadsTextView.setText(String.valueOf(numThreads));
-  }
-
-  @Override
-  public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-    if (parent == modelSpinner) {
-      setModel(Model.valueOf(parent.getItemAtPosition(pos).toString().toUpperCase()));
-    } else if (parent == deviceSpinner) {
-      setDevice(Device.valueOf(parent.getItemAtPosition(pos).toString()));
-    }
-  }
 
   @Override
   public void onNothingSelected(AdapterView<?> parent) {
-    // Do nothing.
+
   }
 }
