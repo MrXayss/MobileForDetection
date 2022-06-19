@@ -24,6 +24,8 @@ import android.media.MediaPlayer;
 import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Toast;
 import java.io.IOException;
 import java.util.List;
@@ -189,5 +191,15 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
 
     imageSizeX = classifier.getImageSizeX();
     imageSizeY = classifier.getImageSizeY();
+  }
+
+  @Override
+  public void onClick(View view) {
+
+  }
+
+  @Override
+  public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+
   }
 }
