@@ -1,20 +1,6 @@
-/*
- * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.tensorflow.lite.examples.classification;
+
+import static org.tensorflow.lite.examples.classification.tflite.Classifier.TAG;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -34,16 +20,20 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.RggbChannelVector;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.telecom.VideoProfile;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
@@ -62,11 +52,10 @@ import java.util.concurrent.TimeUnit;
 import org.tensorflow.lite.examples.classification.customview.AutoFitTextureView;
 import org.tensorflow.lite.examples.classification.env.Logger;
 
-
+@SuppressLint("ValidFragment")
 @SuppressWarnings("FragmentNotInstantiable")
 public class CameraConnectionFragment extends Fragment {
   private static final Logger LOGGER = new Logger();
-
 
   private static final int MINIMUM_PREVIEW_SIZE = 320;
 
@@ -138,6 +127,7 @@ public class CameraConnectionFragment extends Fragment {
       new CameraDevice.StateCallback() {
         @Override
         public void onOpened(final CameraDevice cd) {
+          // This method is called when the camera is opened.  We start camera preview here.
           cameraOpenCloseLock.release();
           cameraDevice = cd;
           createCameraPreviewSession();
@@ -202,7 +192,6 @@ public class CameraConnectionFragment extends Fragment {
       return desiredSize;
     }
 
-    // Pick the smallest of those, assuming we found any
     if (bigEnough.size() > 0) {
       final Size chosenSize = Collections.min(bigEnough, new CompareSizesByArea());
       LOGGER.i("Chosen size: " + chosenSize.getWidth() + "x" + chosenSize.getHeight());
@@ -220,7 +209,6 @@ public class CameraConnectionFragment extends Fragment {
       final Size inputSize) {
     return new CameraConnectionFragment(callback, imageListener, layout, inputSize);
   }
-
 
   private void showToast(final String text) {
     final Activity activity = getActivity();
@@ -284,7 +272,6 @@ public class CameraConnectionFragment extends Fragment {
           characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
       sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-
       previewSize =
           chooseOptimalSize(
               map.getOutputSizes(SurfaceTexture.class),
@@ -300,7 +287,6 @@ public class CameraConnectionFragment extends Fragment {
     } catch (final CameraAccessException e) {
       LOGGER.e(e, "Exception!");
     } catch (final NullPointerException e) {
-
       ErrorDialog.newInstance(getString(R.string.tfe_ic_camera_error))
           .show(getChildFragmentManager(), FRAGMENT_DIALOG);
       throw new IllegalStateException(getString(R.string.tfe_ic_camera_error));
@@ -348,7 +334,6 @@ public class CameraConnectionFragment extends Fragment {
     }
   }
 
-
   private void startBackgroundThread() {
     backgroundThread = new HandlerThread("ImageListener");
     backgroundThread.start();
@@ -365,7 +350,6 @@ public class CameraConnectionFragment extends Fragment {
       LOGGER.e(e, "Exception!");
     }
   }
-
   private void createCameraPreviewSession() {
     try {
       final SurfaceTexture texture = textureView.getSurfaceTexture();
@@ -377,7 +361,6 @@ public class CameraConnectionFragment extends Fragment {
 
       previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
       previewRequestBuilder.addTarget(surface);
-
       LOGGER.i("Opening camera preview: " + previewSize.getWidth() + "x" + previewSize.getHeight());
 
       previewReader =
@@ -399,15 +382,12 @@ public class CameraConnectionFragment extends Fragment {
 
               captureSession = cameraCaptureSession;
               try {
-                // Auto focus should be continuous for camera preview.
                 previewRequestBuilder.set(
                     CaptureRequest.CONTROL_AF_MODE,
                     CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                // Flash is automatically enabled when necessary.
                 previewRequestBuilder.set(
                     CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
 
-                // Finally, we start displaying the camera preview.
                 previewRequest = previewRequestBuilder.build();
                 captureSession.setRepeatingRequest(
                     previewRequest, captureCallback, backgroundHandler);
@@ -426,7 +406,6 @@ public class CameraConnectionFragment extends Fragment {
       LOGGER.e(e, "Exception!");
     }
   }
-
 
   private void configureTransform(final int viewWidth, final int viewHeight) {
     final Activity activity = getActivity();
@@ -462,7 +441,6 @@ public class CameraConnectionFragment extends Fragment {
   static class CompareSizesByArea implements Comparator<Size> {
     @Override
     public int compare(final Size lhs, final Size rhs) {
-      // We cast here to ensure the multiplications won't overflow
       return Long.signum(
           (long) lhs.getWidth() * lhs.getHeight() - (long) rhs.getWidth() * rhs.getHeight());
     }

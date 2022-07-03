@@ -1,36 +1,21 @@
-/*
- * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.tensorflow.lite.examples.classification;
 
 import android.Manifest;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.location.LocationManager;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -38,7 +23,6 @@ import android.os.HandlerThread;
 import android.os.Trace;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.View;
@@ -50,17 +34,14 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.VideoView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ExecutionException;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.tensorflow.lite.examples.classification.env.ImageUtils;
 import org.tensorflow.lite.examples.classification.env.Logger;
 import org.tensorflow.lite.examples.classification.tflite.Classifier.Device;
@@ -103,10 +84,17 @@ public abstract class CameraActivity extends AppCompatActivity
       rotationTextView,
       inferenceTimeTextView;
   protected ImageView bottomSheetArrowImageView;
+  private ImageView plusImageView, minusImageView;
+  private Spinner modelSpinner;
+  private Spinner deviceSpinner;
+  private TextView threadsTextView;
 
   private Model model = Model.QUANTIZED_EFFICIENTNET;
   private Device device = Device.CPU;
   private int numThreads = -1;
+  private int countRed = 0;
+  private int countGreen = 0;
+  MediaPlayer mRed,mGreen;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -138,7 +126,6 @@ public abstract class CameraActivity extends AppCompatActivity
             } else {
               gestureLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
             }
-            //                int width = bottomSheetLayout.getMeasuredWidth();
             int height = gestureLayout.getMeasuredHeight();
 
             sheetBehavior.setPeekHeight(height);
@@ -192,6 +179,21 @@ public abstract class CameraActivity extends AppCompatActivity
     model = Model.valueOf("QUANTIZED_EFFICIENTNET");
     device = Device.valueOf("CPU");
     numThreads = Integer.parseInt("11");
+
+    mRed = MediaPlayer.create(this, R.raw.red);
+    mRed.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+      @Override
+      public void onCompletion(MediaPlayer mp) {
+        stopPlayRed();
+      }
+    });
+    mGreen = MediaPlayer.create(this, R.raw.green);
+    mGreen.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+      @Override
+      public void onCompletion(MediaPlayer mp) {
+        stopPlayGreen();
+      }
+    });
   }
 
 
@@ -254,7 +256,6 @@ public abstract class CameraActivity extends AppCompatActivity
 
   @Override
   public void onImageAvailable(final ImageReader reader) {
-    // We need wait until we have some size from onPreviewSizeChosen
     if (previewWidth == 0 || previewHeight == 0) {
       return;
     }
@@ -434,8 +435,6 @@ public abstract class CameraActivity extends AppCompatActivity
         if (map == null) {
           continue;
         }
-
-
         useCamera2API =
             (facing == CameraCharacteristics.LENS_FACING_EXTERNAL)
                 || isHardwareLevelSupported(
@@ -480,7 +479,6 @@ public abstract class CameraActivity extends AppCompatActivity
   }
 
   protected void fillBytes(final Plane[] planes, final byte[][] yuvBytes) {
-
     for (int i = 0; i < planes.length; ++i) {
       final ByteBuffer buffer = planes[i].getBuffer();
       if (yuvBytes[i] == null) {
@@ -512,52 +510,30 @@ public abstract class CameraActivity extends AppCompatActivity
 
   @UiThread
   protected void showResultsInBottomSheet(List<Recognition> results) {
-    MediaPlayer mRed,mGreen;
-    mRed = MediaPlayer.create(this, R.raw.red);
-    mRed.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-      @Override
-      public void onCompletion(MediaPlayer mp) {
-        mRed.stop();
-        try {
-          mRed.prepare();
-          mRed.seekTo(0);
-        }
-        catch (Throwable t) {
-
-        }
-
-      }
-    });
-    mGreen = MediaPlayer.create(this, R.raw.green);
-    mGreen.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-      @Override
-      public void onCompletion(MediaPlayer mp) {
-        mGreen.stop();
-        try {
-          mGreen.prepare();
-          mGreen.seekTo(0);
-        }
-        catch (Throwable t) {
-
-        }
-
-      }
-    });
     if (results != null && results.size() >= 3) {
       Recognition recognition = results.get(0);
       if (recognition != null) {
         if (recognition.getTitle() != null) recognitionTextView.setText(recognition.getTitle());
         if (recognition.getConfidence() != null) {
-          if (Integer.valueOf(recognition.getTitle()) == 1 && 100 * recognition.getConfidence()>60)
+          if (Integer.valueOf(recognition.getTitle()) == 1 && 100 * recognition.getConfidence()>50)
           {
-            mGreen.start();
+            countGreen++;
           }
-          else if (Integer.valueOf(recognition.getTitle()) == 0 && 100 * recognition.getConfidence()>60)
+          else if (Integer.valueOf(recognition.getTitle()) == 0 && 100 * recognition.getConfidence()>50)
           {
-            mRed.start();
+            countRed++;
           }
           recognitionValueTextView.setText(
                   String.format("%.2f", (100 * recognition.getConfidence())) + "%");
+        }
+        LOGGER.d("LAbel: " + countGreen);
+        if (countRed == 7){
+          countGreen = 0;
+          playRed();
+        }
+        if (countGreen == 7){
+          countRed = 0;
+          playGreen();
         }
       }
 
@@ -579,6 +555,39 @@ public abstract class CameraActivity extends AppCompatActivity
     }
 
   }
+
+  void playRed(){
+    mRed.start();
+    countRed = 0;
+  }
+  void playGreen() {
+    mGreen.start();
+    countGreen = 0;
+//    Intent intent = new Intent(CameraActivity.this, ShowAttention.class);
+//    startActivity(intent);
+//    System.exit(0);
+  }
+  private void stopPlayRed(){
+    mRed.stop();
+    try {
+      mRed.prepare();
+      mRed.seekTo(0);
+    }
+    catch (Throwable t) {
+      Toast.makeText(this, t.getMessage(), Toast.LENGTH_SHORT).show();
+    }
+  }
+  private void stopPlayGreen(){
+    mGreen.stop();
+    try {
+      mGreen.prepare();
+      mGreen.seekTo(0);
+    }
+    catch (Throwable t) {
+      Toast.makeText(this, t.getMessage(), Toast.LENGTH_SHORT).show();
+    }
+  }
+
   protected void showFrameInfo(String frameInfo) {
     frameValueTextView.setText(frameInfo);
   }
@@ -620,6 +629,9 @@ public abstract class CameraActivity extends AppCompatActivity
       LOGGER.d("Updating  device: " + device);
       this.device = device;
       final boolean threadsEnabled = device == Device.CPU;
+      plusImageView.setEnabled(threadsEnabled);
+      minusImageView.setEnabled(threadsEnabled);
+      threadsTextView.setText(threadsEnabled ? String.valueOf(numThreads) : "N/A");
       onInferenceConfigurationChanged();
     }
   }
@@ -646,9 +658,23 @@ public abstract class CameraActivity extends AppCompatActivity
 
   protected abstract void onInferenceConfigurationChanged();
 
+  @Override
+  public void onClick(View v) {
+
+      setNumThreads(--numThreads);
+      threadsTextView.setText(String.valueOf(numThreads));
+  }
+
+  @Override
+  public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+    if (parent == modelSpinner) {
+      setModel(Model.valueOf(parent.getItemAtPosition(pos).toString().toUpperCase()));
+    } else if (parent == deviceSpinner) {
+      setDevice(Device.valueOf(parent.getItemAtPosition(pos).toString()));
+    }
+  }
 
   @Override
   public void onNothingSelected(AdapterView<?> parent) {
-
   }
 }

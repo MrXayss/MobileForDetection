@@ -1,32 +1,21 @@
-/*
- * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.tensorflow.lite.examples.classification;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
-import android.view.View;
-import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.Toast;
+
+import androidx.annotation.RequiresApi;
+
 import java.io.IOException;
 import java.util.List;
 import org.tensorflow.lite.examples.classification.env.BorderedText;
@@ -47,6 +36,7 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   private int imageSizeX;
   private int imageSizeY;
   MediaPlayer mSuccess,mRed;
+  ImageView tv1;
 
   @Override
   protected int getLayoutId() {
@@ -73,6 +63,7 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
 
       }
     });
+    tv1= (ImageView) findViewById(R.id.imageView4);
     return R.layout.tfe_ic_camera_connection_fragment;
 
   }
@@ -116,11 +107,50 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
     rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.M)
   @Override
   protected void processImage() {
+    tv1= (ImageView) findViewById(R.id.imageView4);
     rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
     final int cropSize = Math.min(previewWidth, previewHeight);
+    int [] allpixels = new int [rgbFrameBitmap.getHeight() * rgbFrameBitmap.getWidth()];
 
+    rgbFrameBitmap.getPixels(allpixels, 0, rgbFrameBitmap.getWidth(), 0, 0, rgbFrameBitmap.getWidth(), rgbFrameBitmap.getHeight());
+
+    for(int i = 0; i < allpixels.length; i++)
+    {
+      int redValue = Color.red(allpixels[i]);
+      int blueValue = Color.blue(allpixels[i]);
+      int greenValue = Color.green(allpixels[i]);
+//       Red:
+      if(redValue > 160 && greenValue<110 && blueValue <110)
+      {
+        allpixels[i] = Color.rgb(255,0,0);
+      }
+//      Green:
+      else if(redValue < 80 && greenValue > 150 && blueValue > 80){
+        allpixels[i] = Color.rgb(0,255,0);
+      }
+      //      Black:
+      else if(redValue < 100 && greenValue < 100 && blueValue < 120){
+        allpixels[i] = Color.rgb(0,0,0);
+      }
+      else
+      {
+        allpixels[i] = Color.rgb(255,255,255);
+      }
+    }
+
+    rgbFrameBitmap.setPixels(allpixels,0,rgbFrameBitmap.getWidth(),0, 0, rgbFrameBitmap.getWidth(),rgbFrameBitmap.getHeight());
+    runOnUiThread(new Runnable() {
+
+      @Override
+      public void run() {
+
+        tv1.setImageBitmap(rgbFrameBitmap);
+
+      }
+    });
     runInBackground(
         new Runnable() {
           @Override
@@ -136,6 +166,8 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
                   new Runnable() {
                     @Override
                     public void run() {
+//                      LOGGER.d("LAbel:"+recognition.getTitle().toString());
+//                      mRed.start();
                       showResultsInBottomSheet(results);
                       showFrameInfo(previewWidth + "x" + previewHeight);
                       showCropInfo(imageSizeX + "x" + imageSizeY);
@@ -149,7 +181,6 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
           }
         });
   }
-
   @Override
   protected void onInferenceConfigurationChanged() {
     if (rgbFrameBitmap == null) {
@@ -191,15 +222,5 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
 
     imageSizeX = classifier.getImageSizeX();
     imageSizeY = classifier.getImageSizeY();
-  }
-
-  @Override
-  public void onClick(View view) {
-
-  }
-
-  @Override
-  public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-
   }
 }

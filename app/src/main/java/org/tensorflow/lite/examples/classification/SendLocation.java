@@ -46,10 +46,10 @@ public class SendLocation extends AsyncTask<String, Void, String> {
             while ((inputLine = reader.readLine()) != null)
                 buffer.append(inputLine + "\n");
             if (buffer.length() == 0) {
-                // Stream was empty. No point in parsing.
                 return null;
             }
             JsonResponse =buffer.toString().replaceAll("\\s+","");
+            Log.i("Respons", String.valueOf(JsonResponse));
             return JsonResponse;
 
 

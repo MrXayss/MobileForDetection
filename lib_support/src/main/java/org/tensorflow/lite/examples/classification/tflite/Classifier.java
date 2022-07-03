@@ -1,17 +1,3 @@
-/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-==============================================================================*/
 
 package org.tensorflow.lite.examples.classification.tflite;
 
@@ -62,29 +48,16 @@ public abstract class Classifier {
 
   private static final int MAX_RESULTS = 3;
 
-
   private final int imageSizeX;
-
-
   private final int imageSizeY;
-
   private GpuDelegate gpuDelegate = null;
-
   private NnApiDelegate nnApiDelegate = null;
-
   protected Interpreter tflite;
-
   private final Interpreter.Options tfliteOptions = new Interpreter.Options();
-
   private final List<String> labels;
-
   private TensorImage inputImageBuffer;
-
   private final TensorBuffer outputProbabilityBuffer;
-
   private final TensorProcessor probabilityProcessor;
-
-
   public static Classifier create(Activity activity, Model model, Device device, int numThreads)
       throws IOException {
     if (model == Model.QUANTIZED_EFFICIENTNET) {
@@ -96,15 +69,9 @@ public abstract class Classifier {
 
 
   public static class Recognition {
-
     private final String id;
-
-
     private final String title;
-
-
     private final Float confidence;
-
     private RectF location;
 
     public Recognition(
@@ -171,13 +138,13 @@ public abstract class Classifier {
 
     labels = FileUtil.loadLabels(activity, getLabelPath());
     int imageTensorIndex = 0;
-    int[] imageShape = tflite.getInputTensor(imageTensorIndex).shape();
+    int[] imageShape = tflite.getInputTensor(imageTensorIndex).shape(); // {1, height, width, 3}
     imageSizeY = imageShape[1];
     imageSizeX = imageShape[2];
     DataType imageDataType = tflite.getInputTensor(imageTensorIndex).dataType();
     int probabilityTensorIndex = 0;
     int[] probabilityShape =
-        tflite.getOutputTensor(probabilityTensorIndex).shape();
+        tflite.getOutputTensor(probabilityTensorIndex).shape(); // {1, NUM_CLASSES}
     DataType probabilityDataType = tflite.getOutputTensor(probabilityTensorIndex).dataType();
 
     inputImageBuffer = new TensorImage(imageDataType);
@@ -190,7 +157,6 @@ public abstract class Classifier {
   }
 
   public List<Recognition> recognizeImage(final Bitmap bitmap, int sensorOrientation) {
-
     Trace.beginSection("recognizeImage");
 
     Trace.beginSection("loadImage");
@@ -260,6 +226,7 @@ public abstract class Classifier {
             new Comparator<Recognition>() {
               @Override
               public int compare(Recognition lhs, Recognition rhs) {
+                // Intentionally reversed to put high confidence at the head of the queue.
                 return Float.compare(rhs.getConfidence(), lhs.getConfidence());
               }
             });
@@ -279,7 +246,6 @@ public abstract class Classifier {
   protected abstract String getModelPath();
 
   protected abstract String getLabelPath();
-
 
   protected abstract TensorOperator getPreprocessNormalizeOp();
 
