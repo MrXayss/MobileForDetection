@@ -37,9 +37,11 @@ import java.util.concurrent.ExecutionException;
 public class Main extends Activity implements SensorEventListener {
 
 
+    //Объявляем работу с сенсором устройства
     private SensorManager mSensorManager;
     public int light;
     public int trafficid;
+    //Объявляем объект TextView
     TextView CompOrient,xshow,yshow,zshow,karman,trafficlight,rasst,idtraffic,status,accuracy;
     TextView tvLocationNet;
     Button  push_bottom;
